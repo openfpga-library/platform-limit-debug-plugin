@@ -1,0 +1,6 @@
+{
+  "name": "Platform Limit Debug Plugin",
+  "description": "Outputs some info to diagnose what the actual platform limit is",
+  "allowed_hosts": [],
+  "logo_url": "https://raw.githubusercontent.com/openfpga-library/platform-limit-debug-plugin/main/icon.png"
+}
