@@ -66,14 +66,27 @@ pub fn start() -> FnResult<PluginMessage> {
     let mut mfg_len = 0;
     let mut ctg_len = 0;
 
+    let mut cores_represented = 0;
+
     if let Ok(entries) = fs::read_dir("pocket/Platforms") {
         for entry in entries.flatten() {
             let path = entry.path();
+            if path
+                .file_name()
+                .is_some_and(|f| f.to_str().is_some_and(|f| f.starts_with(".")))
+            {
+                continue;
+            }
+
             if path.extension().and_then(|s| s.to_str()) == Some("json") {
                 num_platforms += 1;
 
                 if let Ok(meta) = fs::metadata(&path) {
                     total_bytes += meta.len();
+                }
+
+                if let Some(platform_id) = path.file_prefix().and_then(|p| p.to_str()) {
+                    cores_represented += count_cores_for_platform(platform_id);
                 }
 
                 if let Ok(json_str) = fs::read_to_string(&path) {
@@ -87,14 +100,14 @@ pub fn start() -> FnResult<PluginMessage> {
         }
     }
 
-    let mut cores_represented = 0;
+    let mut cores_count = 0;
     if let Ok(entries) = fs::read_dir("pocket/Cores") {
         for entry in entries.flatten() {
             if entry.path().is_dir() {
                 let core_path = entry.path().join("core.json");
                 if let Ok(json_str) = fs::read_to_string(core_path) {
                     if let Ok(cf) = serde_json::from_str::<CoreFile>(&json_str) {
-                        cores_represented += cf.core.metadata.platform_ids.len();
+                        cores_count += cf.core.metadata.platform_ids.len();
                     }
                 }
             }
@@ -102,11 +115,33 @@ pub fn start() -> FnResult<PluginMessage> {
     }
 
     let output = format!(
-        "Platforms: {} | Bytes: {} | NameLen: {} | MfgLen: {} | CatLen: {} | CoresRep: {}",
-        num_platforms, total_bytes, name_len, mfg_len, ctg_len, cores_represented
+        "Platforms: {} | Bytes: {} | NameLen: {} | MfgLen: {} | CatLen: {} | CoresRep: {} | CoresCount: {}",
+        num_platforms, total_bytes, name_len, mfg_len, ctg_len, cores_represented, cores_count
     );
 
     println(&output);
 
     Ok(PluginMessage::Exit)
+}
+
+fn count_cores_for_platform(platform_id: &str) -> usize {
+    let mut core_count = 0;
+    if let Ok(entries) = fs::read_dir("pocket/Cores") {
+        for entry in entries.flatten() {
+            if entry.path().is_dir() {
+                let core_path = entry.path().join("core.json");
+                if let Ok(json_str) = fs::read_to_string(core_path) {
+                    if let Ok(cf) = serde_json::from_str::<CoreFile>(&json_str) {
+                        if cf.core.metadata.platform_ids.contains(&platform_id.into()) {
+                            core_count += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if core_count == 0 {
+        println(platform_id);
+    }
+    return core_count;
 }
