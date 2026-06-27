@@ -129,7 +129,7 @@ pub fn start() -> FnResult<PluginMessage> {
     println("---");
 
     let output = format!(
-        "Platforms: {} | Bytes: {} | NameLen: {} | MfgLen: {} | CatLen: {} | CoresRep: {} | CoresCount: {} | AllCoresPlatformIdsCount: {}",
+        "Platforms: {} | Bytes: {} |\nNameLen: {} | MfgLen: {} | CatLen: {} |\nCoresRep: {} | CoresCount: {} | AllCoresPlatformIdsCount: {}",
         num_platforms,
         total_bytes,
         name_len,
