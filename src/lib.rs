@@ -23,6 +23,12 @@ unsafe extern "ExtismHost" {
     fn print_msg(message: &str) -> ();
 }
 
+fn print(msg: &str) -> () {
+    unsafe {
+        let _ = print_msg(&format!("{msg}"));
+    };
+}
+
 fn println(msg: &str) -> () {
     unsafe {
         let _ = print_msg(&format!("{msg}\n"));
@@ -70,6 +76,7 @@ pub fn start() -> FnResult<PluginMessage> {
 
     if let Ok(entries) = fs::read_dir("pocket/Platforms") {
         for entry in entries.flatten() {
+            print(".");
             let path = entry.path();
             if path
                 .file_name()
@@ -100,23 +107,37 @@ pub fn start() -> FnResult<PluginMessage> {
         }
     }
 
+    print("\n");
+
     let mut cores_count = 0;
+    let mut platform_ids_from_core_count = 0;
     if let Ok(entries) = fs::read_dir("pocket/Cores") {
         for entry in entries.flatten() {
             if entry.path().is_dir() {
                 let core_path = entry.path().join("core.json");
                 if let Ok(json_str) = fs::read_to_string(core_path) {
+                    // print("-");
+                    cores_count += 1;
                     if let Ok(cf) = serde_json::from_str::<CoreFile>(&json_str) {
-                        cores_count += cf.core.metadata.platform_ids.len();
+                        platform_ids_from_core_count += cf.core.metadata.platform_ids.len();
                     }
                 }
             }
         }
     }
 
+    println("---");
+
     let output = format!(
-        "Platforms: {} | Bytes: {} | NameLen: {} | MfgLen: {} | CatLen: {} | CoresRep: {} | CoresCount: {}",
-        num_platforms, total_bytes, name_len, mfg_len, ctg_len, cores_represented, cores_count
+        "Platforms: {} | Bytes: {} | NameLen: {} | MfgLen: {} | CatLen: {} | CoresRep: {} | CoresCount: {} | AllCoresPlatformIdsCount: {}",
+        num_platforms,
+        total_bytes,
+        name_len,
+        mfg_len,
+        ctg_len,
+        cores_represented,
+        cores_count,
+        platform_ids_from_core_count
     );
 
     println(&output);
